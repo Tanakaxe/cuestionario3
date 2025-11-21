@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Hardware y Redes</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        /* Sections */
+        .section {
+            padding: 30px;
+            display: none; /* Oculto por defecto */
+            animation: fadeIn 0.5s;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Form Styles */
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        /* Quiz Styles */
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: #e5e7eb;
+            margin-bottom: 20px;
+            border-radius: 3px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--success);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #f9fafb;
+            border: 2px solid #e5e7eb;
+            color: var(--text-color);
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            background-color: #e0e7ff;
+            border-color: var(--primary-color);
+        }
+
+        /* Results Styles */
+        .score-card {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f0fdf4;
+            border-radius: 8px;
+            border: 1px solid var(--success);
+        }
+
+        .score-text {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--success);
+        }
+
+        .details-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .result-item {
+            padding: 10px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.9rem;
+        }
+
+        .result-item.correct { border-left: 4px solid var(--success); }
+        .result-item.incorrect { border-left: 4px solid var(--error); }
+
+        .review-q { font-weight: bold; display: block; margin-bottom: 4px;}
+        .review-ans { color: #6b7280; }
+        .correct-ans-text { color: var(--success); font-weight: bold; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1.2rem; }
+            .section { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="header">
+        <h1>Hardware & Redes</h1>
+    </header>
+
+    <div id="start-screen" class="section active">
+        <h2>Bienvenido</h2>
+        <p>Por favor, ingresa tu nombre para comenzar la evaluación.</p>
+        <input type="text" id="username" placeholder="Tu nombre completo..." autocomplete="off">
+        <button id="btn-start" disabled>Iniciar Cuestionario</button>
+        <p style="font-size: 0.8rem; color: #666; margin-top: 15px;">* Se seleccionarán 10 preguntas aleatorias.</p>
+    </div>
+
+    <div id="quiz-screen" class="section">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+        <p style="text-align: right; font-size: 0.85rem; color: #666;">Pregunta <span id="q-current">1</span> de <span id="q-total">10</span></p>
+        
+        <div class="question-text" id="question-text">
+            </div>
+        
+        <div class="options-grid" id="options-container">
+            </div>
+    </div>
+
+    <div id="result-screen" class="section">
+        <h2>Resultados</h2>
+        <div class="score-card">
+            <p>Estudiante: <strong id="result-name">Nombre</strong></p>
+            <p>Tu calificación:</p>
+            <div class="score-text"><span id="score">0</span>/10</div>
+        </div>
+        
+        <h3>Detalle de respuestas:</h3>
+        <div class="details-list" id="details-list">
+            </div>
+        
+        <button onclick="location.reload()" style="margin-top: 20px;">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+    // --- BANCO DE PREGUNTAS (20 Preguntas para asegurar variedad) ---
+    const questionBank = [
+        { q: "¿Cuál es el componente considerado el cerebro del computador?", options: ["Disco Duro", "Memoria RAM", "CPU (Procesador)", "Tarjeta Madre"], a: 2 },
+        { q: "¿Qué tipo de memoria pierde su información al apagar el equipo?", options: ["ROM", "RAM", "Flash", "Disco Duro"], a: 1 },
+        { q: "¿Qué significa las siglas SSD?", options: ["Super Speed Disk", "Solid State Drive", "System Storage Device", "Serial Standard Drive"], a: 1 },
+        { q: "¿Cuál es la dirección física única de una tarjeta de red?", options: ["Dirección IP", "Dirección MAC", "Dirección DNS", "Gateway"], a: 1 },
+        { q: "¿Qué dispositivo se utiliza para conectar diferentes redes entre sí?", options: ["Switch", "Hub", "Router", "Repetidor"], a: 2 },
+        { q: "¿En qué capa del modelo OSI funciona un Switch tradicional?", options: ["Capa 1 (Física)", "Capa 2 (Enlace de Datos)", "Capa 3 (Red)", "Capa 4 (Transporte)"], a: 1 },
+        { q: "¿Qué protocolo se utiliza para asignar direcciones IP automáticamente?", options: ["DNS", "FTP", "DHCP", "HTTP"], a: 2 },
+        { q: "¿Cuál es la función principal de la fuente de poder?", options: ["Procesar datos", "Almacenar información", "Convertir corriente alterna en directa", "Enfriar el sistema"], a: 2 },
+        { q: "¿Qué puerto se utiliza comúnmente para conectar un monitor de alta definición?", options: ["USB", "HDMI", "Ethernet", "PS/2"], a: 1 },
+        { q: "¿Qué comando se usa en Windows para ver la configuración de red?", options: ["ifconfig", "ping", "ipconfig", "tracert"], a: 2 },
+        { q: "¿Cuál es la topología de red donde todos los nodos se conectan a un punto central?", options: ["Bus", "Anillo", "Estrella", "Malla"], a: 2 },
+        { q: "¿Qué significa BIOS?", options: ["Basic Input Output System", "Binary Internal Operating System", "Basic Interface Of System", "Bus Internal Output System"], a: 0 },
+        { q: "¿Qué cable se utiliza comúnmente para redes Ethernet cableadas?", options: ["Coaxial", "Fibra Óptica", "Par Trenzado (UTP)", "HDMI"], a: 2 },
+        { q: "¿Cuál es la función del disipador de calor?", options: ["Dar energía a la placa", "Evitar el sobrecalentamiento del procesador", "Aumentar la velocidad de internet", "Mejorar los gráficos"], a: 1 },
+        { q: "¿Qué es un bit?", options: ["Un conjunto de 8 bytes", "La unidad mínima de información (0 o 1)", "Un virus informático", "Una marca de procesadores"], a: 1 },
+        { q: "¿Qué protocolo se usa para la transferencia de archivos?", options: ["SMTP", "HTTP", "FTP", "SNMP"], a: 2 },
+        { q: "¿Cuál es una ventaja de la Fibra Óptica frente al cobre?", options: ["Es más barata", "Mayor inmunidad a interferencias electromagnéticas", "Es más fácil de instalar", "Transmite electricidad"], a: 1 },
+        { q: "¿Qué dispositivo modula y demodula señales analógicas a digitales?", options: ["Switch", "Router", "Módem", "Firewall"], a: 2 },
+        { q: "¿Qué tecla permite acceder al BIOS/UEFI en la mayoría de PCs al arrancar?", options: ["Enter", "Espacio", "Supr (Del) o F2", "Alt + F4"], a: 2 },
+        { q: "¿Qué es el Overclocking?", options: ["Limpiar el PC", "Aumentar la frecuencia de reloj de un componente", "Instalar un sistema operativo", "Hackear una red"], a: 1 }
+    ];
+
+    // --- VARIABLES DE ESTADO ---
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let userName = "";
+    let userAnswersLog = []; // Para guardar qué respondió y qué era lo correcto
+
+    // --- REFERENCIAS DOM ---
+    const startScreen = document.getElementById('start-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultScreen = document.getElementById('result-screen');
+    const nameInput = document.getElementById('username');
+    const btnStart = document.getElementById('btn-start');
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options-container');
+    const progressBar = document.getElementById('progress');
+    const currentQSpan = document.getElementById('q-current');
+
+    // --- INICIALIZACIÓN ---
+    
+    // Activar botón solo si hay nombre
+    nameInput.addEventListener('input', () => {
+        btnStart.disabled = nameInput.value.trim() === "";
+    });
+
+    btnStart.addEventListener('click', startQuiz);
+
+    // --- FUNCIONES ---
+
+    function startQuiz() {
+        userName = nameInput.value.trim();
+        // 1. Seleccionar 10 preguntas aleatorias
+        currentQuestions = getRandomQuestions(questionBank, 10);
+        // 2. Resetear variables
+        currentQuestionIndex = 0;
+        score = 0;
+        userAnswersLog = [];
+        
+        // 3. Cambiar pantalla
+        startScreen.classList.remove('active');
+        quizScreen.classList.add('active');
+        
+        // 4. Cargar primera pregunta
+        loadQuestion();
+    }
+
+    // Algoritmo Fisher-Yates para mezclar y cortar el array
+    function getRandomQuestions(allQuestions, count) {
+        // Copiamos el array para no modificar el original
+        const shuffled = [...allQuestions];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled.slice(0, count);
+    }
+
+    function loadQuestion() {
+        const qData = currentQuestions[currentQuestionIndex];
+        
+        // Actualizar UI
+        currentQSpan.textContent = currentQuestionIndex + 1;
+        const progressPercent = ((currentQuestionIndex) / 10) * 100;
+        progressBar.style.width = `${progressPercent}%`;
+        
+        questionText.textContent = qData.q;
+        optionsContainer.innerHTML = ''; // Limpiar opciones anteriores
+
+        // Crear botones
+        qData.options.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = opt;
+            btn.onclick = () => selectOption(index);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function selectOption(selectedIndex) {
+        const qData = currentQuestions[currentQuestionIndex];
+        const isCorrect = selectedIndex === qData.a;
+
+        // Guardar registro
+        userAnswersLog.push({
+            question: qData.q,
+            userAnswer: qData.options[selectedIndex],
+            correctAnswer: qData.options[qData.a],
+            isCorrect: isCorrect
+        });
+
+        if (isCorrect) {
+            score++;
+        }
+
+        // Siguiente pregunta o finalizar
+        currentQuestionIndex++;
+        if (currentQuestionIndex < 10) {
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        quizScreen.classList.remove('active');
+        resultScreen.classList.add('active');
+
+        document.getElementById('result-name').textContent = userName;
+        document.getElementById('score').textContent = score;
+
+        const detailsContainer = document.getElementById('details-list');
+        detailsContainer.innerHTML = '';
+
+        userAnswersLog.forEach((log, i) => {
+            const div = document.createElement('div');
+            div.className = `result-item ${log.isCorrect ? 'correct' : 'incorrect'}`;
+            
+            let htmlContent = `
+                <span class="review-q">${i + 1}. ${log.question}</span>
+                <div class="review-ans">Tu respuesta: <b>${log.userAnswer}</b></div>
+            `;
+
+            if (!log.isCorrect) {
+                htmlContent += `<div class="review-ans">Correcta: <span class="correct-ans-text">${log.correctAnswer}</span></div>`;
+            }
+
+            div.innerHTML = htmlContent;
+            detailsContainer.appendChild(div);
+        });
+    }
+</script>
+
+</body>
+</html>
